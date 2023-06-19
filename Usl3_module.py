@@ -1,18 +1,20 @@
 import re
 import sys
+# import numpy as np
+# from numba import njit, jit
 
 # Matrix representation the commutative relations between the generators
 # e1, e2, e3, h1, h2, f1, f2, f3 are represented by 0, 1, 2, 3, 4, 5, 6, 7 respectively
 # C[0][1] = (-1, 2) means that e1e2 = e2e1 - e3, the first element of the tuple
 # is the coefficient and the second element is the generator
-C = [["0", (-1, 2), "0", (-2, 0), (1, 0), (1, 3), "0", (1, 6)], 
-     [(1, 2), "0", "0", (1, 1), (-2, 1), "0", (1, 4), (-1, 5)], 
-     ["0", "0", "0", (-1, 2), (-1, 2), (1, 1), (-1, 0), (1, 3)], 
-     [(2, 0), (-1, 1), (1, 2), "0", "0", (-2, 5), (1, 6), (-1, 7)], 
-     [(-1, 0), (2, 1), (1, 2), "0", "0", (1, 5), (-2, 6), (-1, 7)], 
-     [(-1, 3), "0", (-1, 1), (2, 5), (-1, 5), "0", (1, 7), "0"], 
-     ["0", (-1, 4), (1, 0), (-1, 6), (2, 6), (-1, 7), "0", "0"], 
-     [(-1, 6), (1, 5), (-1, 3), (1, 7), (1, 7), "0", "0", "0"]]
+C = ([[(0,-1), (-1, 2), (0,-1), (-2, 0), (1, 0), (1, 3), (0,-1), (1, 6)], 
+     [(1, 2), (0,-1), (0,-1), (1, 1), (-2, 1), (0,-1), (1, 4), (-1, 5)], 
+     [(0,-1), (0,-1), (0,-1), (-1, 2), (-1, 2), (1, 1), (-1, 0), (1, 3)], 
+     [(2, 0), (-1, 1), (1, 2), (0,-1), (0,-1), (-2, 5), (1, 6), (-1, 7)], 
+     [(-1, 0), (2, 1), (1, 2), (0,-1), (0,-1), (1, 5), (-2, 6), (-1, 7)], 
+     [(-1, 3), (0,-1), (-1, 1), (2, 5), (-1, 5), (0,-1), (1, 7), (0,-1)], 
+     [(0,-1), (-1, 4), (1, 0), (-1, 6), (2, 6), (-1, 7), (0,-1), (0,-1)], 
+     [(-1, 6), (1, 5), (-1, 3), (1, 7), (1, 7), (0,-1), (0,-1), (0,-1)]])
 
 def commute(term, i):
     """
@@ -22,7 +24,7 @@ def commute(term, i):
     term_1 = term.copy()
     term_1[i] = snd = term[i+1]
     term_1[i+1] = fst = term[i]
-    if (C[fst][snd] == "0"):
+    if (C[fst][snd] == (0,-1)):
         return [term_1]
     else:
         term_2 = term.copy()
@@ -69,10 +71,12 @@ def simplify_sum(sum):
         term_ = simplify_term(term)
         sum_ = sum_ + term_
     sum_ = [term for term in sum_ if term[0] != 0]
+    match = 0
     for i in range(len(sum_)):
         for j in range(len(sum_)):
         # Check if term equals to another term in sum and add their coefficients
             if (i != j and sum_[i][1:] == sum_[j][1:]):
+                match = 1
                 sum_[i][0] = sum_[i][0] + sum_[j][0]
                 sum_.pop(j)
                 return simplify_sum(sum_)
@@ -157,7 +161,6 @@ def mul(prod):
         prod_ = mul_sum([prod_, prod[i]])
     return prod_
         
-
 def parse(string):
     """
     Parse the given string into a term representation.
@@ -180,7 +183,6 @@ def parse(string):
         for i in range(power):
             prod.append(sum)
     return mul(prod)
-
 
 def unparse(sum):
     """
@@ -213,9 +215,10 @@ if __name__ == "__main__":
         print("Example: `python Usl3_module.py \"e1 + e2 + e3*e2\"`\n")
         print("NOTE: Bracket are not implemented yet, carat (^) applies at the end\nin each multiplication (*) term and not individual summation\n(+) terms or generators, for clarity use carats only at the end\nof each multiplication term.\n")
         print("For example \"e1^2e2 * e1^3e3+1\" is equivalent to \"(e1e2)^2 (e1e3+1)^3\",\ninstead writing \"e1e2 ^2 * e1e3+1 ^3\", which is equivalent, is more clear.")
+
     elif (sys.argv[1] == "run"):
         while True:
             string = input()
-            print(simplify(string))
+            print("==>" + simplify(string))
     else:
-        print(simplify(sys.argv[1]))
+        print("==>" + simplify(sys.argv[1]))
