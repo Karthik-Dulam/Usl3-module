@@ -1,5 +1,6 @@
 import re
 import sys
+import string
 # import numpy as np
 # from numba import njit, jit
 
@@ -184,6 +185,30 @@ def parse(string):
             prod.append(sum)
     return mul(prod)
 
+superscript_map = {
+    "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶",
+    "7": "⁷", "8": "⁸", "9": "⁹", "a": "ᵃ", "b": "ᵇ", "c": "ᶜ", "d": "ᵈ",
+    "e": "ᵉ", "f": "ᶠ", "g": "ᵍ", "h": "ʰ", "i": "ᶦ", "j": "ʲ", "k": "ᵏ",
+    "l": "ˡ", "m": "ᵐ", "n": "ⁿ", "o": "ᵒ", "p": "ᵖ", "q": "۹", "r": "ʳ",
+    "s": "ˢ", "t": "ᵗ", "u": "ᵘ", "v": "ᵛ", "w": "ʷ", "x": "ˣ", "y": "ʸ",
+    "z": "ᶻ", "A": "ᴬ", "B": "ᴮ", "C": "ᶜ", "D": "ᴰ", "E": "ᴱ", "F": "ᶠ",
+    "G": "ᴳ", "H": "ᴴ", "I": "ᴵ", "J": "ᴶ", "K": "ᴷ", "L": "ᴸ", "M": "ᴹ",
+    "N": "ᴺ", "O": "ᴼ", "P": "ᴾ", "Q": "Q", "R": "ᴿ", "S": "ˢ", "T": "ᵀ",
+    "U": "ᵁ", "V": "ⱽ", "W": "ᵂ", "X": "ˣ", "Y": "ʸ", "Z": "ᶻ", "+": "⁺",
+    "-": "⁻", "=": "⁼", "(": "⁽", ")": "⁾"}
+
+trans = str.maketrans(
+    ''.join(superscript_map.keys()),
+    ''.join(superscript_map.values()))
+
+def replace_repeated_occurrences(string, symbol):
+    pattern = r'(' + symbol + r'){2,}'
+    matches = re.finditer(pattern, string)
+    for match in matches:
+        n = len(match.group()) // 2
+        string = re.sub(pattern, f'{symbol}'+str(n).translate(trans), string,1)
+    return string
+
 def unparse(sum):
     """
     Parse the given string into a sum representation.
@@ -197,8 +222,15 @@ def unparse(sum):
             term_ = [dic[x] for x in term_]
             if (coeff < 0):
                 string = string[:-2]
-            string += str(coeff)
-            string += "".join(term_) + " + "
+            if (coeff == 1):
+                string += "".join(term_) + " + "
+            elif (coeff == -1):
+                string += "-"+ "".join(term_) + " + "
+            else:
+                string += str(coeff)
+                string += "".join(term_) + " + "
+    for value in dic.values():
+        string = replace_repeated_occurrences(string, value)
     return string[:-3]
 
 def simplify(string):
@@ -208,6 +240,17 @@ def simplify(string):
     """
     sum = parse(string)
     return unparse(simplify_sum(sum))
+
+def find_nilpotent_action(sum, x):
+    sum_ = sum.copy()
+    pow_x = 0
+    while (sum_ != [[0]]):
+        print(unparse(sum_) + "=>", end="")
+        sum_ = simplify_sum(mul([x, sum_]))
+        pow_x += 1
+    print(0)
+    return pow_x
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -220,5 +263,9 @@ if __name__ == "__main__":
         while True:
             string = input()
             print("==>" + simplify(string))
+    elif (sys.argv[1] == "test"):
+        while True:
+            string = input()
+            print("Nilpotent Index (" + string + ", " + sys.argv[2] + ") = " + str(find_nilpotent_action(parse(string), parse(sys.argv[2]))))
     else:
         print("==>" + simplify(sys.argv[1]))
