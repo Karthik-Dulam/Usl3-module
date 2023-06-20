@@ -217,6 +217,9 @@ def unparse(sum):
     string = ""
     for term in sum:
         if term != []:
+            if term == [1]:
+                string += "1 + "
+                continue
             term_ = term.copy()
             coeff = term_.pop(0)
             term_ = [dic[x] for x in term_]
@@ -244,11 +247,15 @@ def simplify(string):
 def find_nilpotent_action(sum, x):
     sum_ = sum.copy()
     pow_x = 0
+    sum_ = simplify_sum(sum_)
+    prev_sum = sum_.copy()
     while (sum_ != [[0]]):
         print(unparse(sum_) + "=>", end="")
+        prev_sum = sum_.copy()
         sum_ = simplify_sum(mul([x, sum_]))
         pow_x += 1
     print(0)
+    print("prev term " + unparse(prev_sum))
     return pow_x
 
 
