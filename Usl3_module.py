@@ -205,7 +205,7 @@ def replace_repeated_occurrences(string, symbol):
     pattern = r'(' + symbol + r'){2,}'
     matches = re.finditer(pattern, string)
     for match in matches:
-        n = len(match.group()) // 2
+        n = len(match.group()) // len(symbol)
         string = re.sub(pattern, f'{symbol}'+str(n).translate(trans), string,1)
     return string
 
@@ -228,7 +228,7 @@ def unparse(sum):
             if (coeff == 1):
                 string += "".join(term_) + " + "
             elif (coeff == -1):
-                string += "-"+ "".join(term_) + " + "
+                string += "- 1"+ "".join(term_) + " + "
             else:
                 string += str(coeff)
                 string += "".join(term_) + " + "
@@ -248,16 +248,43 @@ def find_nilpotent_action(sum, x):
     sum_ = sum.copy()
     pow_x = 0
     sum_ = simplify_sum(sum_)
-    prev_sum = sum_.copy()
-    while (sum_ != [[0]]):
-        print(unparse(sum_) + "=>", end="")
-        prev_sum = sum_.copy()
+    while (len(sum_) != 1 or len(sum_[0]) != 1):
+        # print(unparse(sum_) + "=>", end="")
         sum_ = simplify_sum(mul([x, sum_]))
         pow_x += 1
-    print(0)
-    print("prev term " + unparse(prev_sum))
-    return pow_x
+    # print(0)
+    # print("prev term " + unparse(prev_sum))
+    return (pow_x + (sum_[0][0] != 0), sum_[0][0] != 0)
 
+def parse_path(path):
+    string = ""
+    for i in path:
+        if i == 0:
+            string += "n"
+        elif i == 2:
+            string += "m"
+    return replace_repeated_occurrences(replace_repeated_occurrences(string, "n"), "m")
+
+def is_number(sum):
+    return (len(sum) == 1 and len(sum[0]) == 1 and sum[0][0] != 0)
+
+def is_cyclic(sum, path = []):
+    if is_number(sum):
+        print(path)
+        print(parse_path(path) + " |--> " + unparse(sum))
+        return True
+    else:
+        sum_ = simplify_sum(mul([parse("e1-1"), sum]))
+        if sum_ != [[0]]:
+            path_ = path + [0]
+            return is_cyclic(sum_, path_)
+        else:
+            sum_ = simplify_sum(mul([parse("e3"),sum]))
+            if sum_ != [[0]]:
+                path_ = path + [2]
+                return is_cyclic(sum_, path_)
+            else:
+                return False
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -273,6 +300,8 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "test"):
         while True:
             string = input()
-            print("Nilpotent Index (" + string + ", " + sys.argv[2] + ") = " + str(find_nilpotent_action(parse(string), parse(sys.argv[2]))))
+            # print("==>" + str(parse(string)))
+            print("==>" + str(is_cyclic(parse(string))))
+            # print("Nilpotent Index (" + string + ", " + sys.argv[2] + ") = " + str(find_nilpotent_action(parse(string), parse(sys.argv[2]))))
     else:
         print("==>" + simplify(sys.argv[1]))
