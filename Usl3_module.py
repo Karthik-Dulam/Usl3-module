@@ -1,21 +1,19 @@
 import re
 import sys
 import string
-# import numpy as np
-# from numba import njit, jit
 
-# Matrix representation the commutative relations between the generators
-# e1, e2, e3, h1, h2, f1, f2, f3 are represented by 0, 1, 2, 3, 4, 5, 6, 7 respectively
-# C[0][1] = (-1, 2) means that e1e2 = e2e1 - e3, the first element of the tuple
+# Matrix representation of the commutative relations between the generators
+# The generators e1, e2, e3, h1, h2, f1, f2, f3 are represented by 0, 1, 2, 3, 4, 5, 6, 7 respectively
+# C[0][1] = (-1, 2) means that e1e2 = e2e1 - e3, where the first element of the tuple
 # is the coefficient and the second element is the generator
 C = ([[(0,-1), (-1, 2), (0,-1), (-2, 0), (1, 0), (1, 3), (0,-1), (1, 6)], 
-     [(1, 2), (0,-1), (0,-1), (1, 1), (-2, 1), (0,-1), (1, 4), (-1, 5)], 
-     [(0,-1), (0,-1), (0,-1), (-1, 2), (-1, 2), (1, 1), (-1, 0), (1, 3)], 
-     [(2, 0), (-1, 1), (1, 2), (0,-1), (0,-1), (-2, 5), (1, 6), (-1, 7)], 
-     [(-1, 0), (2, 1), (1, 2), (0,-1), (0,-1), (1, 5), (-2, 6), (-1, 7)], 
-     [(-1, 3), (0,-1), (-1, 1), (2, 5), (-1, 5), (0,-1), (1, 7), (0,-1)], 
-     [(0,-1), (-1, 4), (1, 0), (-1, 6), (2, 6), (-1, 7), (0,-1), (0,-1)], 
-     [(-1, 6), (1, 5), (-1, 3), (1, 7), (1, 7), (0,-1), (0,-1), (0,-1)]])
+    [(1, 2), (0,-1), (0,-1), (1, 1), (-2, 1), (0,-1), (1, 4), (-1, 5)], 
+    [(0,-1), (0,-1), (0,-1), (-1, 2), (-1, 2), (1, 1), (-1, 0), (1, 3)], 
+    [(2, 0), (-1, 1), (1, 2), (0,-1), (0,-1), (-2, 5), (1, 6), (-1, 7)], 
+    [(-1, 0), (2, 1), (1, 2), (0,-1), (0,-1), (1, 5), (-2, 6), (-1, 7)], 
+    [(-1, 3), (0,-1), (-1, 1), (2, 5), (-1, 5), (0,-1), (1, 7), (0,-1)], 
+    [(0,-1), (-1, 4), (1, 0), (-1, 6), (2, 6), (-1, 7), (0,-1), (0,-1)], 
+    [(-1, 6), (1, 5), (-1, 3), (1, 7), (1, 7), (0,-1), (0,-1), (0,-1)]])
 
 def commute(term, i):
     """
@@ -35,6 +33,9 @@ def commute(term, i):
         return [term_1, term_2]
 
 def eta(n):
+    """
+    The Whittaker function defined on the positive roots of the Lie algebra sl(3) indexed by 0, 1, and 2
+    """
     if (n == 0):
         return 1
     if (n == 1):
@@ -85,6 +86,8 @@ def simplify_sum(sum):
         sum_ = [[0]]
     return sum_
 
+
+# Dictionaries for parsing and unparsing terms
 dic = {0: "e1", 1: "e2", 2: "e3", 3: "h1", 4: "h2", 5: "f1", 6: "f2", 7: "f3"}
 cid = {"e1": 0, "e2": 1, "e3": 2, "h1": 3, "h2": 4, "f1": 5, "f2": 6, "f3": 7}
 
@@ -150,6 +153,10 @@ def mul_term(term_1, term_2):
     return term
 
 def mul_sum(sum):
+    """
+    Multiply two sums together.
+    Returns the resulting sum.
+    """    
     sum_ = []
     for term_1 in sum[0]:
         for term_2 in sum[1]:
@@ -157,6 +164,10 @@ def mul_sum(sum):
     return sum_
 
 def mul(prod):
+    """
+    Multiply a list of sums together.
+    Returns the resulting sum.
+    """
     prod_ = prod[0]
     for i in range(1, len(prod)):
         prod_ = mul_sum([prod_, prod[i]])
@@ -185,6 +196,7 @@ def parse(string):
             prod.append(sum)
     return mul(prod)
 
+# Superscript map for pretty printing
 superscript_map = {
     "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶",
     "7": "⁷", "8": "⁸", "9": "⁹", "a": "ᵃ", "b": "ᵇ", "c": "ᶜ", "d": "ᵈ",
@@ -245,18 +257,24 @@ def simplify(string):
     return unparse(simplify_sum(sum))
 
 def find_nilpotent_action(sum, x):
+    """
+    Find the nilpotent action of the given sum on the generator x.
+    Repeatedly apply the action of the sum on x until it reduces to a number.
+    Returns the nilpotent index and the result of the action.
+    """
     sum_ = sum.copy()
     pow_x = 0
     sum_ = simplify_sum(sum_)
     while (len(sum_) != 1 or len(sum_[0]) != 1):
-        # print(unparse(sum_) + "=>", end="")
         sum_ = simplify_sum(mul([x, sum_]))
         pow_x += 1
-    # print(0)
-    # print("prev term " + unparse(prev_sum))
     return (pow_x + (sum_[0][0] != 0), sum_[0][0] != 0)
 
 def parse_path(path):
+    """
+    Parse the given path into a string representation and replace repeated occurrences of n and m.
+    Returns the parsed path.
+    """
     string = ""
     for i in path:
         if i == 0:
@@ -297,7 +315,7 @@ if __name__ == "__main__":
         while True:
             string = input()
             print("==>" + simplify(string))
-    elif (sys.argv[1] == "test"):
+    elif (sys.argv[1] == "cyclic"):
         while True:
             string = input()
             # print("==>" + str(parse(string)))
